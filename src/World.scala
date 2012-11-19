@@ -54,6 +54,19 @@ class World(val width:Int = 10, val height:Int = 10) {
   }
 
   def display() {
-
+    val cellStrings:Array[Array[String]] = Array.fill(height, width)(null)
+    cells.foreach (
+      (cell: Cell) =>
+        cellStrings(cell.y)(cell.x) = if(cell.alive) "o" else " "
+    )
+    val horizontalLine = " " + ("-" * width) + " "
+    println(horizontalLine)
+    cellStrings.foreach {
+      (col: Array[String]) =>
+        print("|")
+        print(col.mkString)
+        print("|\n")
+    }
+    println(horizontalLine)
   }
 }
