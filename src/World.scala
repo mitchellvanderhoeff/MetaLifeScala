@@ -1,11 +1,17 @@
-import collection.mutable
 import collection.parallel.immutable.ParVector
+import collection.parallel.mutable.ParArray
 
 /**
  * Created by Mitchell Vanderhoeff
  * Date: 2012-11-18
  * Time: 5:49 PM
  */
+
+object LifeRules {
+  val live = Some(true)
+  val die = Some(false)
+  val doNothing = None
+}
 
 case class Cell(x:Int, y:Int, alive:Boolean = false) {
   def dead = !alive
@@ -15,22 +21,17 @@ case class Cell(x:Int, y:Int, alive:Boolean = false) {
   }
 }
 
-class World(val width:Int = 10, val height:Int = 10) {
+class World(width:Int, height:Int, lifeRules:((Cell, ParVector[Cell]) => Option[Boolean])) {
   val EMPTY_CELLS:ParVector[Cell] = {
     ParVector.tabulate(width * height) {
       (index: Int) =>
         val x = index % width
-        val y = math.floor(index / height).toInt
+        val y = math.floor(index / width).toInt
         Cell(x, y)
     }
   }
 
   var cells:ParVector[Cell] = EMPTY_CELLS
-
-  var shouldLive:((Cell, ParVector[Cell]) => Boolean) = {
-    (cell:Cell, neighbours:ParVector[Cell]) =>
-      neighbours.length >= 3 && neighbours.length <= 5
-  }
 
   def clear() {
     cells = EMPTY_CELLS
@@ -49,24 +50,38 @@ class World(val width:Int = 10, val height:Int = 10) {
   def tick() {
     cells = cells.map {
       (cell: Cell) =>
-        val alive = shouldLive(cell, findNeighbours(cell))
-        Cell(cell.x, cell.y, alive)
+        val rulesResult = lifeRules.apply(cell, findNeighbours(cell))
+        if (rulesResult.isDefined)
+          Cell(cell.x, cell.y, rulesResult.get)
+        else
+          Cell(cell.x, cell.y, cell.alive)
+    }
+  }
+
+  def run(times:Int = 10) {
+    display()
+    for (i <- 0 until times) {
+      tick()
+      display()
     }
   }
 
   def display() {
-    val cellStrings:Array[Array[String]] = Array.fill(height, width)(null)
-    cells.foreach ( (cell: Cell) =>
-        cellStrings(cell.y)(cell.x) = if(cell.alive) "o" else " "
-    )
-    val horizontalLine = " " + ("-" * width) + " "
-    println(horizontalLine)
-    cellStrings.foreach {
-      (col: Array[String]) =>
-        print("|")
-        print(col.mkString)
-        print("|\n")
+    val cellStringMatrix = ParArray.fill(height, width)("")
+    cells.foreach {
+      (cell: Cell) =>
+        cellStringMatrix(cell.y)(cell.x) = if (cell.alive) "o" else " "
     }
+
+    val horizontalLine:String = " " + ("-" * width) + " "
+
+    val cellStringRows =
+        cellStringMatrix.map (
+          (row: ParArray[String]) => f"|${row.mkString}|"
+        )
+
+    println(horizontalLine)
+    cellStringRows.foreach(println(_))
     println(horizontalLine)
   }
 }
