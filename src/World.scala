@@ -47,7 +47,8 @@ class World(val width:Int = 10, val height:Int = 10) {
   }
 
   def tick() {
-    cells = cells.map { (cell: Cell) =>
+    cells = cells.map {
+      (cell: Cell) =>
         val alive = shouldLive(cell, findNeighbours(cell))
         Cell(cell.x, cell.y, alive)
     }
@@ -55,8 +56,7 @@ class World(val width:Int = 10, val height:Int = 10) {
 
   def display() {
     val cellStrings:Array[Array[String]] = Array.fill(height, width)(null)
-    cells.foreach (
-      (cell: Cell) =>
+    cells.foreach ( (cell: Cell) =>
         cellStrings(cell.y)(cell.x) = if(cell.alive) "o" else " "
     )
     val horizontalLine = " " + ("-" * width) + " "
