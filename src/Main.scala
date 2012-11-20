@@ -6,13 +6,21 @@ import collection.parallel.immutable.ParVector
  * Time: 9:35 PM
  */
 
-val world = new World(width = 20, height = 10, lifeRules = {
-  (cell:Cell, neighbours:ParVector[Cell]) =>
-    if (cell.alive && neighbours.length >= 6) LifeRules.die
-    else if (cell.dead && neighbours.length == 0) LifeRules.live
-    else LifeRules.doNothing
-})
+val world = new World(width = 40, height = 15, lifeRules =
+  (cell:Cell, neighbours:List[Cell]) => {
+    if (neighbours.exists(cell.isSW(_)))
+      LifeRules.live
+    else if (cell.dead && neighbours.length == 1)
+      LifeRules.live
+    else if (cell.alive && neighbours.length >= 3)
+      LifeRules.die
+    else
+      LifeRules.doNothing
+  }
+)
 
-world.randomize(ratio = 0.35)
-world.run(times = 20)
+//world.randomize(ratio = 0.05)
+world.spawnCellsAt((0, 0))
+
+world.run(times = 10)
 
